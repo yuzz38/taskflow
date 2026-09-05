@@ -2,8 +2,7 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = "taskflow-backend"
-        CONTAINER_NAME = "taskflow-app"
+        APP_NAME = "taskflow-app"
         APP_PORT = "3000"
     }
 
@@ -42,20 +41,19 @@ pipeline {
             }
         }
 
-        stage('Build Docker image') {
-            when { branch 'main' }
-            steps {
-                sh 'docker build -t $IMAGE_NAME:$BUILD_NUMBER -t $IMAGE_NAME:latest .'
-            }
-        }
-
+        // CD: выполняется только для main. Без Docker — процесс перезапускается
+        // напрямую менеджером процессов pm2 (устанавливается локально через npx,
+        // глобальная установка на агенте не требуется).
         stage('Deploy') {
             when { branch 'main' }
             steps {
-                sh '''
-                    docker rm -f $CONTAINER_NAME || true
-                    docker run -d --name $CONTAINER_NAME -p $APP_PORT:3000 $IMAGE_NAME:latest
-                '''
+                dir('backend') {
+                    sh '''
+                        npx --yes pm2 delete $APP_NAME || true
+                        PORT=$APP_PORT npx --yes pm2 start server.js --name $APP_NAME
+                        npx --yes pm2 save
+                    '''
+                }
             }
         }
     }
