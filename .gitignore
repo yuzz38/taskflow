@@ -1,0 +1,5 @@
+node_modules/
+backend/taskflow.db
+backend/taskflow.db-*
+*.log
+.DS_Store
