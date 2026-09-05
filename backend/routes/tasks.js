@@ -15,12 +15,13 @@ router.post('/', (req, res) => {
 
 // READ ALL (+ фильтры по category / user / status)
 router.get('/', (req, res) => {
-  const { category, user, status } = req.query;
+  const { category, user, status, search } = req.query;
   let sql = 'SELECT * FROM tasks WHERE 1=1';
   const params = [];
   if (category) { sql += ' AND category_id = ?'; params.push(category); }
   if (user) { sql += ' AND user_id = ?'; params.push(user); }
   if (status) { sql += ' AND status = ?'; params.push(status); }
+  if (search) { sql += ' AND title LIKE ?'; params.push(`%${search}%`); }
   sql += ' ORDER BY id';
   res.json(db.prepare(sql).all(...params));
 });

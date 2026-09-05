@@ -125,6 +125,12 @@ describe('Tasks CRUD + filters + complete', () => {
     expect(res.body.every(t => t.user_id === userId)).toBe(true);
   });
 
+  it('SEARCH tasks by title substring', async () => {
+    const res = await request(app).get('/api/tasks?search=CI/CD');
+    expect(res.status).toBe(200);
+    expect(res.body.some(t => t.id === taskId)).toBe(true);
+  });
+
   it('PATCH complete task', async () => {
     const res = await request(app).patch(`/api/tasks/${taskId}/complete`);
     expect(res.status).toBe(200);
