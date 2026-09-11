@@ -23,7 +23,7 @@ pipeline {
         stage('Install dependencies') {
             steps {
                 dir('backend') {
-                    bat 'npm ci || npm install'
+                    bat 'call npm ci || call npm install'
                 }
             }
         }
@@ -31,7 +31,7 @@ pipeline {
         stage('Test') {
             steps {
                 dir('backend') {
-                    bat 'npm test -- --ci --reporters=default --reporters=jest-junit'
+                    bat 'call npm test -- --ci --reporters=default --reporters=jest-junit'
                 }
             }
             post {
@@ -46,11 +46,11 @@ pipeline {
             steps {
                 dir('backend') {
                     bat '''
-                        npx --yes pm2 delete %APP_NAME% 2>nul || echo no-previous-process
+                        call npx --yes pm2 delete %APP_NAME% 2>nul || echo no-previous-process
                         set PORT=%APP_PORT%
-                        npx --yes pm2 start server.js --name %APP_NAME%
-                        npx --yes pm2 status
-                        npx --yes pm2 save
+                        call npx --yes pm2 start server.js --name %APP_NAME%
+                        call npx --yes pm2 status
+                        call npx --yes pm2 save
                     '''
                 }
             }
