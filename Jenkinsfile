@@ -45,9 +45,13 @@ pipeline {
             when { branch 'main' }
             steps {
                 dir('backend') {
-                    bat 'npx --yes pm2 delete %APP_NAME% || echo no-previous-process'
-                    bat 'set PORT=%APP_PORT% && npx --yes pm2 start server.js --name %APP_NAME%'
-                    bat 'npx --yes pm2 save'
+                    bat '''
+                        npx --yes pm2 delete %APP_NAME% 2>nul || echo no-previous-process
+                        set PORT=%APP_PORT%
+                        npx --yes pm2 start server.js --name %APP_NAME%
+                        npx --yes pm2 status
+                        npx --yes pm2 save
+                    '''
                 }
             }
         }
