@@ -17,14 +17,14 @@ pipeline {
         stage('Checkout') {
             steps {
                 checkout scm
-                sh 'echo "Branch: $BRANCH_NAME, commit: $(git rev-parse --short HEAD)"'
+                bat 'echo Branch: %BRANCH_NAME%'
             }
         }
 
         stage('Install dependencies') {
             steps {
                 dir('backend') {
-                    sh 'npm ci || npm install'
+                    bat 'npm ci || npm install'
                 }
             }
         }
@@ -32,7 +32,7 @@ pipeline {
         stage('Test') {
             steps {
                 dir('backend') {
-                    sh 'npm test -- --ci --reporters=default --reporters=jest-junit'
+                    bat 'npm test -- --ci --reporters=default --reporters=jest-junit'
                 }
             }
             post {
@@ -45,16 +45,16 @@ pipeline {
         stage('Build Docker image') {
             when { branch 'main' }
             steps {
-                sh 'docker build -t $IMAGE_NAME:$BUILD_NUMBER -t $IMAGE_NAME:latest .'
+                bat 'docker build -t %IMAGE_NAME%:%BUILD_NUMBER% -t %IMAGE_NAME%:latest .'
             }
         }
 
         stage('Deploy') {
             when { branch 'main' }
             steps {
-                sh '''
-                    docker rm -f $CONTAINER_NAME || true
-                    docker run -d --name $CONTAINER_NAME -p $APP_PORT:3000 $IMAGE_NAME:latest
+                bat '''
+                    docker rm -f %CONTAINER_NAME% 2>nul || echo no-previous-container
+                    docker run -d --name %CONTAINER_NAME% -p %APP_PORT%:3000 %IMAGE_NAME%:latest
                 '''
             }
         }
