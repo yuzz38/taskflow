@@ -41,11 +41,14 @@ pipeline {
             }
         }
 
+
         stage('Deploy') {
             when { branch 'main' }
             steps {
                 dir('backend') {
                     bat '''
+                        set BUILD_ID=dontKillMe
+                        set JENKINS_NODE_COOKIE=dontKillMe
                         call npx --yes pm2 delete %APP_NAME% 2>nul || echo no-previous-process
                         set PORT=%APP_PORT%
                         call npx --yes pm2 start server.js --name %APP_NAME%
