@@ -243,3 +243,19 @@
                 --line-num-width=[_N]
                   Set the width of the -N line number field to _N characters.
                 --match-shift=[_N]
+                  Show at least _N characters to the left of a search match.
+                --modelines=[_N]
+                  Read _N lines from the input file and look for vim modelines.
+                --mouse
+                  Enable mouse input.
+                --no-edit-warn
+                  Don't warn when using v command on a file opened via LESSOPEN.
+                --no-keypad
+                  Don't send termcap keypad init/deinit strings.
+                --no-histdups
+                  Remove duplicates from command history.
+                --no-number-headers
+                  Don't give line numbers to header lines.
+                --no-paste
+                  Ignore pasted input.
+                --no-search-header-lines
