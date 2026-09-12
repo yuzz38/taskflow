@@ -63,7 +63,6 @@ router.delete('/:id', (req, res) => {
   res.status(204).send();
 });
 
-// --- Комментарии к задаче (вложенный ресурс) ---
 
 // CREATE comment
 router.post('/:id/comments', (req, res) => {
