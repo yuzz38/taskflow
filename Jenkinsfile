@@ -56,17 +56,19 @@ pipeline {
             }
         }
 
+        // ИСПРАВЛЕНО: отдельного docker-compose.exe в новых версиях Docker Desktop
+        // нет — Compose это плагин docker.exe, вызывается как "docker.exe compose"
+        // (пробел, а не дефис).
         stage('Deploy') {
             when { branch 'main' }
             steps {
                 bat '''
-                    "C:\\Users\\levap\\AppData\\Local\\Programs\\DockerDesktop\\docker-compose.exe" -p %COMPOSE_PROJECT% down --remove-orphans
-                    "C:\\Users\\levap\\AppData\\Local\\Programs\\DockerDesktop\\docker-compose.exe" -p %COMPOSE_PROJECT% up -d --build
-                    "C:\\Users\\levap\\AppData\\Local\\Programs\\DockerDesktop\\docker-compose.exe" -p %COMPOSE_PROJECT% ps
+                    "C:\\Users\\levap\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe" compose -p %COMPOSE_PROJECT% down --remove-orphans
+                    "C:\\Users\\levap\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe" compose -p %COMPOSE_PROJECT% up -d --build
+                    "C:\\Users\\levap\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe" compose -p %COMPOSE_PROJECT% ps
                 '''
             }
         }
-
 
         stage('Smoke test') {
             when { branch 'main' }
