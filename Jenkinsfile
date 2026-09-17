@@ -2,8 +2,9 @@ pipeline {
     agent any
 
     environment {
-        APP_NAME = "taskflow-app"
-        APP_PORT = "3000"
+        IMAGE_NAME     = "taskflow-backend"
+        COMPOSE_PROJECT = "taskflow"
+        APP_URL        = "http://localhost:8000"
     }
 
     options {
@@ -41,21 +42,38 @@ pipeline {
             }
         }
 
+        // Сборка образа приложения. Тегируем номером сборки (для истории версий)
+        // и latest (его использует docker-compose при деплое).
+        stage('Build Docker image') {
+            steps {
+                bat '''
+                    docker build -t %IMAGE_NAME%:%BUILD_NUMBER% -t %IMAGE_NAME%:latest .\\backend
+                    docker images %IMAGE_NAME%
+                '''
+            }
+        }
 
+        // CD: разворачиваем только из main.
+        // docker compose пересоздаёт контейнеры backend + nginx.
         stage('Deploy') {
             when { branch 'main' }
             steps {
-                dir('backend') {
-                    bat '''
-                        set BUILD_ID=dontKillMe
-                        set JENKINS_NODE_COOKIE=dontKillMe
-                        call npx --yes pm2 delete %APP_NAME% 2>nul || echo no-previous-process
-                        set PORT=%APP_PORT%
-                        call npx --yes pm2 start server.js --name %APP_NAME%
-                        call npx --yes pm2 status
-                        call npx --yes pm2 save
-                    '''
-                }
+                bat '''
+                    docker compose -p %COMPOSE_PROJECT% down --remove-orphans
+                    docker compose -p %COMPOSE_PROJECT% up -d --build
+                    docker compose -p %COMPOSE_PROJECT% ps
+                '''
+            }
+        }
+
+        // Проверяем, что развёрнутое приложение реально отвечает через nginx.
+        stage('Smoke test') {
+            when { branch 'main' }
+            steps {
+                bat '''
+                    ping -n 8 127.0.0.1 > nul
+                    curl -f %APP_URL%/api/health
+                '''
             }
         }
     }
