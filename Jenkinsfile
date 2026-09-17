@@ -60,12 +60,13 @@ pipeline {
             when { branch 'main' }
             steps {
                 bat '''
-                    "C:\\Users\\levap\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe" compose -p %COMPOSE_PROJECT% down --remove-orphans
-                    "C:\\Users\\levap\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe" compose -p %COMPOSE_PROJECT% up -d --build
-                    "C:\\Users\\levap\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe" compose -p %COMPOSE_PROJECT% ps
+                    "C:\\Users\\levap\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe" compose down --remove-orphans
+                    "C:\\Users\\levap\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe" compose up -d --build
+                    "C:\\Users\\levap\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe" compose ps
                 '''
             }
         }
+
 
         stage('Smoke test') {
             when { branch 'main' }
