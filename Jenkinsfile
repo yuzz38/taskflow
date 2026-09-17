@@ -2,9 +2,10 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME     = "taskflow-backend"
+        IMAGE_NAME      = "taskflow-backend"
         COMPOSE_PROJECT = "taskflow"
-        APP_URL        = "http://localhost:8000"
+        APP_URL         = "http://localhost:8000"
+        DOCKER_HOST     = "tcp://127.0.0.1:2375" // Используем открытый порт
     }
 
     options {
@@ -13,7 +14,6 @@ pipeline {
     }
 
     stages {
-
         stage('Checkout') {
             steps {
                 checkout scm
@@ -24,7 +24,10 @@ pipeline {
         stage('Install dependencies') {
             steps {
                 dir('backend') {
-                    bat 'call npm ci || call npm install'
+                    bat '''
+                        if exist node_modules rmdir /s /q node_modules
+                        call npm ci || call npm install
+                    '''
                 }
             }
         }
@@ -42,36 +45,36 @@ pipeline {
             }
         }
 
-        // Сборка образа приложения. Тегируем номером сборки (для истории версий)
-        // и latest (его использует docker-compose при деплое).
         stage('Build Docker image') {
             steps {
-                bat '''
-                    docker build -t %IMAGE_NAME%:%BUILD_NUMBER% -t %IMAGE_NAME%:latest .\\backend
-                    docker images %IMAGE_NAME%
-                '''
+                dir('backend') {
+                    bat '''
+                        "C:\\Users\\levap\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe" build -t %IMAGE_NAME%:%BUILD_NUMBER% -t %IMAGE_NAME%:latest .
+                        "C:\\Users\\levap\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe" images %IMAGE_NAME%
+                    '''
+                }
             }
         }
 
-        // CD: разворачиваем только из main.
-        // docker compose пересоздаёт контейнеры backend + nginx.
-        stage('Deploy') {
+        // ИСПРАВЛЕНО: отдельного docker-compose.exe в новых версиях Docker Desktop
+        // нет — Compose это плагин docker.exe, вызывается как "docker.exe compose"
+        // (пробел, а не дефис).
+      stage('Deploy') {
             when { branch 'main' }
             steps {
                 bat '''
-                    docker compose -p %COMPOSE_PROJECT% down --remove-orphans
-                    docker compose -p %COMPOSE_PROJECT% up -d --build
-                    docker compose -p %COMPOSE_PROJECT% ps
+                    "C:\\Users\\levap\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker-compose.exe" -p %COMPOSE_PROJECT% down --remove-orphans
+                    "C:\\Users\\levap\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker-compose.exe" -p %COMPOSE_PROJECT% up -d --build
+                    "C:\\Users\\levap\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker-compose.exe" -p %COMPOSE_PROJECT% ps
                 '''
             }
         }
 
-        // Проверяем, что развёрнутое приложение реально отвечает через nginx.
         stage('Smoke test') {
             when { branch 'main' }
             steps {
                 bat '''
-                    ping -n 8 127.0.0.1 > nul
+                    ping -n 15 127.0.0.1 > nul
                     curl -f %APP_URL%/api/health
                 '''
             }
