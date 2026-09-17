@@ -5,10 +5,7 @@ pipeline {
         IMAGE_NAME      = "taskflow-backend"
         COMPOSE_PROJECT = "taskflow"
         APP_URL         = "http://localhost:8000"
-        DOCKER_HOST     = "tcp://127.0.0.1:2375" // Порт, который мы открыли ранее
-        
-        // Добавляем путь к Docker в системный PATH для Jenkins
-        PATH            = "C:\\Program Files\\Docker\\Docker\\resources\\bin;C:\\Program Files\\Docker\\Docker\\resources;${env.PATH}"
+        DOCKER_HOST     = "tcp://127.0.0.1:2375" // Используем открытый порт
     }
 
     options {
@@ -52,8 +49,8 @@ pipeline {
             steps {
                 dir('backend') {
                     bat '''
-                        docker build -t %IMAGE_NAME%:%BUILD_NUMBER% -t %IMAGE_NAME%:latest .
-                        docker images %IMAGE_NAME%
+                        "C:\\Users\\levap\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe" build -t %IMAGE_NAME%:%BUILD_NUMBER% -t %IMAGE_NAME%:latest .
+                        "C:\\Users\\levap\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe" images %IMAGE_NAME%
                     '''
                 }
             }
@@ -63,9 +60,9 @@ pipeline {
             when { branch 'main' }
             steps {
                 bat '''
-                    docker compose -p %COMPOSE_PROJECT% down --remove-orphans
-                    docker compose -p %COMPOSE_PROJECT% up -d --build
-                    docker compose -p %COMPOSE_PROJECT% ps
+                    "C:\\Users\\Users\\levap\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe" compose -p %COMPOSE_PROJECT% down --remove-orphans
+                    "C:\\Users\\levap\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe" compose -p %COMPOSE_PROJECT% up -d --build
+                    "C:\\Users\\levap\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe" compose -p %COMPOSE_PROJECT% ps
                 '''
             }
         }
