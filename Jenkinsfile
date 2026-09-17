@@ -6,6 +6,7 @@ pipeline {
         COMPOSE_PROJECT = "taskflow"
         APP_URL        = "http://localhost:8000"
         DOCKER_HOST     = "tcp://localhost:2375"
+        PATH            = "C:\\Program Files\\Docker\\Docker\\resources\\bin;C:\\Program Files\\Docker\\Docker\\resources;${env.PATH}"
     }
 
     options {
