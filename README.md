@@ -28,11 +28,35 @@ cd backend
 npm test
 ```
 
+## Запуск в Docker (лабораторная работа №2)
+
+```bash
+docker compose up -d --build
+# Приложение:  http://localhost:8000
+# Health API:  http://localhost:8000/api/health
+```
+
+Архитектура развёртывания:
+
+```
+Браузер → nginx (порт 8000) ─┬→ / ....... статика фронтенда
+                             └→ /api/ ... proxy_pass → backend:3000 (контейнер Node.js)
+                                                          └→ SQLite в volume taskflow-db
+```
+
+Полезные команды:
+
+```bash
+docker compose ps            # статус контейнеров
+docker compose logs -f       # логи
+docker compose down          # остановить и удалить контейнеры
+```
+
 ## CI/CD
 
-Сборка настроена в Jenkins через `Jenkinsfile` в корне репозитория (без Docker — деплой
-выполняется менеджером процессов **pm2**, который ставится локально через `npx`,
-глобальная установка на агенте Jenkins не требуется).
+Сборка настроена в Jenkins через `Jenkinsfile` в корне репозитория:
+Checkout → Install → Test → Build Docker image → Deploy (`docker compose up -d`) → Smoke test.
+Этапы Deploy и Smoke test выполняются только для ветки `main`.
 См. отчёт `docs/report.docx` за подробностями конфигурации Jenkins и веб-хука GitHub.
 
 ## Ветки репозитория

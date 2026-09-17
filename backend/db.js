@@ -1,10 +1,11 @@
 const path = require('path');
 const Database = require('better-sqlite3');
 
-// В тестах используем отдельную in-memory БД, чтобы не портить рабочую
+// В тестах используем отдельную in-memory БД, чтобы не портить рабочую.
+// В Docker путь к файлу БД задаётся через DB_PATH и указывает на volume.
 const dbFile = process.env.NODE_ENV === 'test'
   ? ':memory:'
-  : path.join(__dirname, 'taskflow.db');
+  : (process.env.DB_PATH || path.join(__dirname, 'taskflow.db'));
 
 const db = new Database(dbFile);
 db.pragma('journal_mode = WAL');
