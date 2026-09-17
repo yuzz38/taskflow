@@ -71,7 +71,7 @@ pipeline {
             when { branch 'main' }
             steps {
                 bat '''
-                    ping -n 8 127.0.0.1 > nul
+                    ping -n 15 127.0.0.1 > nul
                     curl -f %APP_URL%/api/health
                 '''
             }
