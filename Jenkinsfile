@@ -25,7 +25,10 @@ pipeline {
         stage('Install dependencies') {
             steps {
                 dir('backend') {
-                    bat 'call npm ci || call npm install'
+                    bat '''
+                        if exist node_modules rmdir /s /q node_modules
+                        call npm ci || call npm install
+                    '''
                 }
             }
         }
@@ -45,12 +48,14 @@ pipeline {
 
         // Сборка образа приложения. Тегируем номером сборки (для истории версий)
         // и latest (его использует docker-compose при деплое).
-        stage('Build Docker image') {
+       stage('Build Docker image') {
             steps {
-                bat '''
-                    docker build -t %IMAGE_NAME%:%BUILD_NUMBER% -t %IMAGE_NAME%:latest .\\backend
-                    docker images %IMAGE_NAME%
-                '''
+                dir('backend') {
+                    bat '''
+                        docker build -t %IMAGE_NAME%:%BUILD_NUMBER% -t %IMAGE_NAME%:latest .
+                        docker images %IMAGE_NAME%
+                    '''
+                }
             }
         }
 
