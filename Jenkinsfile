@@ -2,10 +2,12 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME     = "taskflow-backend"
+        IMAGE_NAME      = "taskflow-backend"
         COMPOSE_PROJECT = "taskflow"
-        APP_URL        = "http://localhost:8000"
-        DOCKER_HOST     = "tcp://localhost:2375"
+        APP_URL         = "http://localhost:8000"
+        DOCKER_HOST     = "tcp://127.0.0.1:2375" // Порт, который мы открыли ранее
+        
+        // Добавляем путь к Docker в системный PATH для Jenkins
         PATH            = "C:\\Program Files\\Docker\\Docker\\resources\\bin;C:\\Program Files\\Docker\\Docker\\resources;${env.PATH}"
     }
 
@@ -15,7 +17,6 @@ pipeline {
     }
 
     stages {
-
         stage('Checkout') {
             steps {
                 checkout scm
@@ -47,9 +48,7 @@ pipeline {
             }
         }
 
-        // Сборка образа приложения. Тегируем номером сборки (для истории версий)
-        // и latest (его использует docker-compose при деплое).
-       stage('Build Docker image') {
+        stage('Build Docker image') {
             steps {
                 dir('backend') {
                     bat '''
@@ -60,8 +59,6 @@ pipeline {
             }
         }
 
-        // CD: разворачиваем только из main.
-        // docker compose пересоздаёт контейнеры backend + nginx.
         stage('Deploy') {
             when { branch 'main' }
             steps {
@@ -73,7 +70,6 @@ pipeline {
             }
         }
 
-        // Проверяем, что развёрнутое приложение реально отвечает через nginx.
         stage('Smoke test') {
             when { branch 'main' }
             steps {
