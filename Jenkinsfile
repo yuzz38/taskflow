@@ -5,6 +5,7 @@ pipeline {
         IMAGE_NAME     = "taskflow-backend"
         COMPOSE_PROJECT = "taskflow"
         APP_URL        = "http://localhost:8000"
+        DOCKER_HOST     = "tcp://localhost:2375"
     }
 
     options {
