@@ -70,11 +70,11 @@ pipeline {
                         passwordVariable: 'DH_TOKEN'
                     )]) {
                         bat '''
-                            "%DOCKER%" tag %IMAGE_NAME%:%BUILD_NUMBER% %DOCKERHUB_REPO%:%BUILD_NUMBER%
-                            "%DOCKER%" tag %IMAGE_NAME%:latest %DOCKERHUB_REPO%:latest
-                            echo %DH_TOKEN%|"%DOCKER%" login -u %DH_USER% --password-stdin
-                            "%DOCKER%" push %DOCKERHUB_REPO%:%BUILD_NUMBER%
-                            "%DOCKER%" push %DOCKERHUB_REPO%:latest
+                            "%DOCKER%" tag %IMAGE_NAME%:%BUILD_NUMBER% %DOCKERHUB_REPO%:%BUILD_NUMBER% || exit /b 1
+                            "%DOCKER%" tag %IMAGE_NAME%:latest %DOCKERHUB_REPO%:latest || exit /b 1
+                            echo %DH_TOKEN%|"%DOCKER%" login -u %DH_USER% --password-stdin || exit /b 1
+                            "%DOCKER%" push %DOCKERHUB_REPO%:%BUILD_NUMBER% || exit /b 1
+                            "%DOCKER%" push %DOCKERHUB_REPO%:latest || exit /b 1
                             "%DOCKER%" logout
                         '''
                     }
