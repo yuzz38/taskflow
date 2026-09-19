@@ -4,6 +4,8 @@ pipeline {
     environment {
         IMAGE_NAME      = "taskflow-backend"
         COMPOSE_PROJECT = "taskflow"
+        DOCKERHUB_USER  = "yuzz38"          
+        DOCKERHUB_REPO  = "${DOCKERHUB_USER}/${IMAGE_NAME}"
         APP_URL         = "http://localhost:8000"
         DOCKER_HOST     = "tcp://127.0.0.1:2375" // Используем открытый порт
     }
@@ -55,10 +57,27 @@ pipeline {
                 }
             }
         }
-
-        // ИСПРАВЛЕНО: отдельного docker-compose.exe в новых версиях Docker Desktop
-        // нет — Compose это плагин docker.exe, вызывается как "docker.exe compose"
-        // (пробел, а не дефис).
+        stage('Push to registry') {
+            when { branch 'main' }
+            steps {
+                dir('backend') {
+                    withCredentials([usernamePassword(
+                        credentialsId: 'dockerhub-creds',
+                        usernameVariable: 'DH_USER',
+                        passwordVariable: 'DH_TOKEN'
+                    )]) {
+                        bat '''
+                            docker tag %IMAGE_NAME%:%BUILD_NUMBER% %DOCKERHUB_REPO%:%BUILD_NUMBER%
+                            docker tag %IMAGE_NAME%:latest %DOCKERHUB_REPO%:latest
+                            echo %DH_TOKEN% | docker login -u %DH_USER% --password-stdin
+                            docker push %DOCKERHUB_REPO%:%BUILD_NUMBER%
+                            docker push %DOCKERHUB_REPO%:latest
+                            docker logout
+                        '''
+                    }
+                }
+            }
+        }
       stage('Deploy') {
             when { branch 'main' }
             steps {
