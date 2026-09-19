@@ -4,10 +4,11 @@ pipeline {
     environment {
         IMAGE_NAME      = "taskflow-backend"
         COMPOSE_PROJECT = "taskflow"
-        DOCKERHUB_USER  = "yuzz38"          
+        DOCKERHUB_USER  = "yuzz38"
         DOCKERHUB_REPO  = "${DOCKERHUB_USER}/${IMAGE_NAME}"
         APP_URL         = "http://localhost:8000"
-        DOCKER_HOST     = "tcp://127.0.0.1:2375" // Используем открытый порт
+        DOCKER          = "C:\\Users\\levap\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe"
+        COMPOSE         = "C:\\Users\\levap\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker-compose.exe"
     }
 
     options {
@@ -16,6 +17,7 @@ pipeline {
     }
 
     stages {
+
         stage('Checkout') {
             steps {
                 checkout scm
@@ -51,12 +53,13 @@ pipeline {
             steps {
                 dir('backend') {
                     bat '''
-                        "C:\\Users\\levap\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe" build -t %IMAGE_NAME%:%BUILD_NUMBER% -t %IMAGE_NAME%:latest .
-                        "C:\\Users\\levap\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe" images %IMAGE_NAME%
+                        "%DOCKER%" build --cache-from %IMAGE_NAME%:latest -t %IMAGE_NAME%:%BUILD_NUMBER% -t %IMAGE_NAME%:latest .
+                        "%DOCKER%" images %IMAGE_NAME%
                     '''
                 }
             }
         }
+
         stage('Push to registry') {
             when { branch 'main' }
             steps {
@@ -67,24 +70,25 @@ pipeline {
                         passwordVariable: 'DH_TOKEN'
                     )]) {
                         bat '''
-                            docker tag %IMAGE_NAME%:%BUILD_NUMBER% %DOCKERHUB_REPO%:%BUILD_NUMBER%
-                            docker tag %IMAGE_NAME%:latest %DOCKERHUB_REPO%:latest
-                            echo %DH_TOKEN% | docker login -u %DH_USER% --password-stdin
-                            docker push %DOCKERHUB_REPO%:%BUILD_NUMBER%
-                            docker push %DOCKERHUB_REPO%:latest
-                            docker logout
+                            "%DOCKER%" tag %IMAGE_NAME%:%BUILD_NUMBER% %DOCKERHUB_REPO%:%BUILD_NUMBER%
+                            "%DOCKER%" tag %IMAGE_NAME%:latest %DOCKERHUB_REPO%:latest
+                            echo %DH_TOKEN%|"%DOCKER%" login -u %DH_USER% --password-stdin
+                            "%DOCKER%" push %DOCKERHUB_REPO%:%BUILD_NUMBER%
+                            "%DOCKER%" push %DOCKERHUB_REPO%:latest
+                            "%DOCKER%" logout
                         '''
                     }
                 }
             }
         }
-      stage('Deploy') {
+
+        stage('Deploy') {
             when { branch 'main' }
             steps {
                 bat '''
-                    "C:\\Users\\levap\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker-compose.exe" -p %COMPOSE_PROJECT% down --remove-orphans
-                    "C:\\Users\\levap\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker-compose.exe" -p %COMPOSE_PROJECT% up -d --build
-                    "C:\\Users\\levap\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker-compose.exe" -p %COMPOSE_PROJECT% ps
+                    "%COMPOSE%" -p %COMPOSE_PROJECT% down --remove-orphans
+                    "%COMPOSE%" -p %COMPOSE_PROJECT% up -d --build
+                    "%COMPOSE%" -p %COMPOSE_PROJECT% ps
                 '''
             }
         }
