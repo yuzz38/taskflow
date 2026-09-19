@@ -61,31 +61,31 @@ pipeline {
         }
 
        stage('Push to registry') {
-        when {
-            anyOf { branch 'main'; branch 'dev' }
-        }
-        steps {
-            dir('backend') {
-                withCredentials([usernamePassword(
-                    credentialsId: 'dockerhub-creds',
-                    usernameVariable: 'DH_USER',
-                    passwordVariable: 'DH_TOKEN'
-                )]) {
-                    script {
-                        def tag = (env.BRANCH_NAME == 'main') ? 'latest' : 'dev'
-                        bat """
-                            "%DOCKER%" tag %IMAGE_NAME%:%BUILD_NUMBER% %DOCKERHUB_REPO%:%BUILD_NUMBER% || exit /b 1
-                            "%DOCKER%" tag %IMAGE_NAME%:latest %DOCKERHUB_REPO%:${tag} || exit /b 1
-                            echo %DH_TOKEN%|"%DOCKER%" login -u %DH_USER% --password-stdin || exit /b 1
-                            "%DOCKER%" push %DOCKERHUB_REPO%:%BUILD_NUMBER% || exit /b 1
-                            "%DOCKER%" push %DOCKERHUB_REPO%:${tag} || exit /b 1
-                            "%DOCKER%" logout
-                        """
+            when {
+                anyOf { branch 'main'; branch 'dev' }
+            }
+            steps {
+                dir('backend') {
+                    withCredentials([usernamePassword(
+                        credentialsId: 'dockerhub-creds',
+                        usernameVariable: 'DH_USER',
+                        passwordVariable: 'DH_TOKEN'
+                    )]) {
+                        script {
+                            def tag = (env.BRANCH_NAME == 'main') ? 'latest' : 'dev'
+                            bat """
+                                "%DOCKER%" tag %IMAGE_NAME%:%BUILD_NUMBER% %DOCKERHUB_REPO%:%BUILD_NUMBER% || exit /b 1
+                                "%DOCKER%" tag %IMAGE_NAME%:latest %DOCKERHUB_REPO%:${tag} || exit /b 1
+                                echo %DH_TOKEN%|"%DOCKER%" login -u %DH_USER% --password-stdin || exit /b 1
+                                "%DOCKER%" push %DOCKERHUB_REPO%:%BUILD_NUMBER% || exit /b 1
+                                "%DOCKER%" push %DOCKERHUB_REPO%:${tag} || exit /b 1
+                                "%DOCKER%" logout
+                            """
+                        }
                     }
                 }
             }
         }
-    }
 
         stage('Deploy') {
             when { branch 'main' }
