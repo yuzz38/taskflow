@@ -116,3 +116,7 @@ button.ghost {
 .list li.done { opacity: 0.55; text-decoration: line-through; }
 
 .meta { font-size: 12px; color: #5b6b62; }
+
+.status span { margin-left: 14px; }
+.status .ok { color: var(--accent); }
+.status .down { color: var(--danger); }

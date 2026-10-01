@@ -6,16 +6,30 @@ async function api(path, opts = {}) {
     ...opts,
   });
   if (res.status === 204) return null;
-  return res.json();
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    alert(`Ошибка ${res.status}: ${data.error || 'сервис недоступен'}`);
+    throw new Error(data.error);
+  }
+  return data;
 }
 
+// Статус каждого микросервиса + имя пода (реплики), который ответил.
+// Обновляется каждые 3 секунды — видно балансировку и восстановление.
+const SERVICES = ['users', 'categories', 'tasks'];
+
 async function checkHealth() {
-  try {
-    await api('/health');
-    document.getElementById('apiStatus').textContent = 'API: online';
-  } catch {
-    document.getElementById('apiStatus').textContent = 'API: offline';
-  }
+  const parts = await Promise.all(SERVICES.map(async s => {
+    try {
+      const r = await fetch(`${API}/${s}/health`);
+      if (!r.ok) throw new Error();
+      const h = await r.json();
+      return `<span class="ok">${s}: ${h.pod}</span>`;
+    } catch {
+      return `<span class="down">${s}: offline</span>`;
+    }
+  }));
+  document.getElementById('apiStatus').innerHTML = parts.join('');
 }
 
 async function loadCategories() {
@@ -30,7 +44,7 @@ async function loadCategories() {
     const del = document.createElement('button');
     del.className = 'ghost';
     del.textContent = '✕';
-    del.onclick = async () => { await api(`/categories/${c.id}`, { method: 'DELETE' }); loadCategories(); };
+    del.onclick = async () => { await api(`/categories/${c.id}`, { method: 'DELETE' }); loadCategories(); loadTasks(); };
     li.appendChild(del);
     list.appendChild(li);
     const opt = document.createElement('option');
@@ -44,14 +58,14 @@ async function loadUsers() {
   const list = document.getElementById('userList');
   const select = document.getElementById('taskUser');
   list.innerHTML = '';
-  select.innerHTML = '<option value="">— пользователь —</option>';
+  select.innerHTML = '<option value="">— исполнитель —</option>';
   users.forEach(u => {
     const li = document.createElement('li');
     li.innerHTML = `<span>${u.name} <span class="meta">${u.email}</span></span>`;
     const del = document.createElement('button');
     del.className = 'ghost';
     del.textContent = '✕';
-    del.onclick = async () => { await api(`/users/${u.id}`, { method: 'DELETE' }); loadUsers(); };
+    del.onclick = async () => { await api(`/users/${u.id}`, { method: 'DELETE' }); loadUsers(); loadTasks(); };
     li.appendChild(del);
     list.appendChild(li);
     const opt = document.createElement('option');
@@ -67,7 +81,9 @@ async function loadTasks() {
   tasks.forEach(t => {
     const li = document.createElement('li');
     if (t.status === 'done') li.classList.add('done');
-    li.innerHTML = `<span>${t.title}</span>`;
+    const meta = [t.user_name && `исполнитель: ${t.user_name}`, t.category_name && `категория: ${t.category_name}`]
+      .filter(Boolean).join(' · ');
+    li.innerHTML = `<span>${t.title} <span class="meta">${meta}</span></span>`;
     const actions = document.createElement('span');
     if (t.status !== 'done') {
       const done = document.createElement('button');
@@ -114,6 +130,7 @@ document.getElementById('taskForm').onsubmit = async (e) => {
 };
 
 checkHealth();
-loadCategories();
-loadUsers();
-loadTasks();
+setInterval(checkHealth, 3000);
+loadCategories().catch(() => {});
+loadUsers().catch(() => {});
+loadTasks().catch(() => {});

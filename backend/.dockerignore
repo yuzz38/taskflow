@@ -1,7 +1,0 @@
-node_modules
-npm-debug.log
-taskflow.db
-taskflow.db-*
-junit.xml
-tests
-.git

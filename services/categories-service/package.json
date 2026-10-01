@@ -1,0 +1,12 @@
+{
+  "name": "taskflow-categories-service",
+  "version": "1.0.0",
+  "description": "TaskFlow microservice: categories-service",
+  "main": "server.js",
+  "scripts": { "start": "node server.js" },
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.19.2",
+    "pg": "^8.12.0"
+  }
+}

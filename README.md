@@ -1,66 +1,36 @@
-# TaskFlow
+# TaskFlow — микросервисы в Kubernetes (лабораторная работа №3)
 
-Трёхзвенное CRUD-приложение для лабораторной работы по CI/CD.
-
-**Архитектура:**
-- Клиент — статический HTML/CSS/JS (`/frontend`)
-- Сервер — Node.js + Express (`/backend`), REST API
-- База данных — SQLite (файл `backend/taskflow.db`, создаётся автоматически)
-
-**Сущности и CRUD (21 операция):**
-- Users: create, read all, read one, update, delete
-- Categories: create, read all, read one, update, delete
-- Tasks: create, read all (+ фильтры по category/user/status), read one, update, delete, complete
-- Comments: create (nested), read (nested), delete
-
-## Запуск локально
-
-```bash
-cd backend
-npm install
-npm start          # http://localhost:3000
-```
-
-## Тесты
-
-```bash
-cd backend
-npm test
-```
-
-## Запуск в Docker (лабораторная работа №2)
-
-```bash
-docker compose up -d --build
-# Приложение:  http://localhost:8000
-# Health API:  http://localhost:8000/api/health
-```
-
-Архитектура развёртывания:
+## Архитектура
 
 ```
-Браузер → nginx (порт 8000) ─┬→ / ....... статика фронтенда
-                             └→ /api/ ... proxy_pass → backend:3000 (контейнер Node.js)
-                                                          └→ SQLite в volume taskflow-db
+Браузер → localhost:30080 (Service NodePort)
+            └→ frontend (nginx, 2 реплики) ─┬→ /api/users      → users-service      (3 реплики) → users_db
+                                            ├→ /api/categories → categories-service (3 реплики) → categories_db
+                                            └→ /api/tasks,     → tasks-service      (3 реплики) → tasks_db
+                                               /api/comments          │  HTTP-запросы к users-service
+                                                                      └→ и categories-service
+                                            PostgreSQL (1 реплика + PersistentVolume)
 ```
 
-Полезные команды:
+Принципы микросервисной архитектуры:
+- каждый сервис отвечает за одну бизнес-область и разворачивается независимо (свой образ, свой Deployment);
+- у каждого сервиса своя база данных, чужие таблицы напрямую не читаются;
+- сервисы общаются только по HTTP API через DNS-имена Kubernetes Service;
+- отказ одного сервиса не роняет остальные (tasks-service отдаёт задачи даже без имён исполнителей);
+- сервисы stateless — поэтому их можно масштабировать репликами.
 
-```bash
-docker compose ps            # статус контейнеров
-docker compose logs -f       # логи
-docker compose down          # остановить и удалить контейнеры
+## Запуск
+
+```powershell
+.\build.ps1                 # собрать образы
+kubectl apply -f k8s/       # развернуть всё в кластер
+kubectl get pods -w         # дождаться, пока все поды будут Running и READY 1/1
 ```
 
-## CI/CD
+Приложение: http://localhost:30080
 
-Сборка настроена в Jenkins через `Jenkinsfile` в корне репозитория:
-Checkout → Install → Test → Build Docker image → Deploy (`docker compose up -d`) → Smoke test.
-Этапы Deploy и Smoke test выполняются только для ветки `main`.
-См. отчёт `docs/report.docx` за подробностями конфигурации Jenkins и веб-хука GitHub.
+## Удаление
 
-## Ветки репозитория
-
-- `main` — стабильная версия, из неё разворачивается CD
-- `dev` — интеграционная ветка, сюда мёржатся фичи после ревью
-- `feature/*` — ветки разработки отдельных функций/исправлений (например, `feature/task-comments`)
+```powershell
+kubectl delete -f k8s/
+```

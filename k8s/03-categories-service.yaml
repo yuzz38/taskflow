@@ -1,0 +1,52 @@
+# categories-service: Deployment создаёт ReplicaSet, который держит 3 реплики (пода).
+# Если под падает или удаляется — контроллер сразу создаёт новый.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: categories-service
+  labels: { app: categories-service }
+spec:
+  replicas: 3
+  selector:
+    matchLabels: { app: categories-service }
+  template:
+    metadata:
+      labels: { app: categories-service }
+    spec:
+      containers:
+        - name: categories-service
+          image: taskflow/categories-service:1.0
+          imagePullPolicy: IfNotPresent   # образ собран локально, из интернета не тянем
+          ports:
+            - containerPort: 3000
+          envFrom:
+            - secretRef: { name: postgres-secret }
+          env:
+            - name: DB_HOST
+              value: postgres
+            - name: DB_NAME
+              value: categories_db
+          # readiness: трафик идёт только на готовые поды
+          readinessProbe:
+            httpGet: { path: /health, port: 3000 }
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          # liveness: если под завис — Kubernetes перезапустит контейнер
+          livenessProbe:
+            httpGet: { path: /health, port: 3000 }
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          resources:
+            requests: { cpu: 50m, memory: 64Mi }
+            limits: { memory: 256Mi }
+---
+# Service — постоянный адрес (DNS-имя categories-service) и балансировка между репликами
+apiVersion: v1
+kind: Service
+metadata:
+  name: categories-service
+spec:
+  selector: { app: categories-service }
+  ports:
+    - port: 3000
+      targetPort: 3000
