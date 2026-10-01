@@ -1,0 +1,56 @@
+# tasks-service: Deployment создаёт ReplicaSet, который держит 3 реплики (пода).
+# Если под падает или удаляется — контроллер сразу создаёт новый.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tasks-service
+  labels: { app: tasks-service }
+spec:
+  replicas: 3
+  selector:
+    matchLabels: { app: tasks-service }
+  template:
+    metadata:
+      labels: { app: tasks-service }
+    spec:
+      containers:
+        - name: tasks-service
+          image: taskflow/tasks-service:1.0
+          imagePullPolicy: IfNotPresent   # образ собран локально, из интернета не тянем
+          ports:
+            - containerPort: 3000
+          envFrom:
+            - secretRef: { name: postgres-secret }
+          env:
+            - name: DB_HOST
+              value: postgres
+            - name: DB_NAME
+              value: tasks_db
+            - name: USERS_URL
+              value: http://users-service:3000
+            - name: CATEGORIES_URL
+              value: http://categories-service:3000
+          # readiness: трафик идёт только на готовые поды
+          readinessProbe:
+            httpGet: { path: /health, port: 3000 }
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          # liveness: если под завис — Kubernetes перезапустит контейнер
+          livenessProbe:
+            httpGet: { path: /health, port: 3000 }
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          resources:
+            requests: { cpu: 50m, memory: 64Mi }
+            limits: { memory: 256Mi }
+---
+# Service — постоянный адрес (DNS-имя tasks-service) и балансировка между репликами
+apiVersion: v1
+kind: Service
+metadata:
+  name: tasks-service
+spec:
+  selector: { app: tasks-service }
+  ports:
+    - port: 3000
+      targetPort: 3000
