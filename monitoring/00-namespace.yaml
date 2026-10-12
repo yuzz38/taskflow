@@ -1,0 +1,5 @@
+# Отдельное пространство имён для всех компонентов мониторинга
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring

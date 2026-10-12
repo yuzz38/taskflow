@@ -1,0 +1,31 @@
+# Стресс-тест памяти: процесс каждые 2 секунды занимает ещё 5 МБ.
+# Когда container_memory_working_set_bytes доходит до лимита 200Mi,
+# ядро убивает контейнер (OOMKilled), Kubernetes его перезапускает.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: memory-stress
+  labels: { app: memory-stress }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: memory-stress }
+  template:
+    metadata:
+      labels: { app: memory-stress }
+    spec:
+      containers:
+        - name: memory-stress
+          image: node:22-alpine          # уже скачан в лабе 3
+          imagePullPolicy: IfNotPresent
+          command: ["node", "-e"]
+          args:
+            - |
+              const chunks = [];
+              setInterval(() => {
+                chunks.push(Buffer.alloc(5 * 1024 * 1024, 1));   // +5 МБ
+                console.log('allocated ' + chunks.length * 5 + ' MB');
+              }, 2000);
+          resources:
+            requests: { memory: 64Mi, cpu: 50m }
+            limits: { memory: 200Mi }

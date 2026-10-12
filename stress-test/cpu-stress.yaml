@@ -1,0 +1,23 @@
+# Нагрузка на CPU с лимитом 100m (0.1 ядра): процесс хочет целое ядро,
+# а получает 10% — растёт метрика container_cpu_cfs_throttled_seconds_total
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cpu-stress
+  labels: { app: cpu-stress }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: cpu-stress }
+  template:
+    metadata:
+      labels: { app: cpu-stress }
+    spec:
+      containers:
+        - name: cpu-stress
+          image: node:22-alpine
+          imagePullPolicy: IfNotPresent
+          command: ["node", "-e", "while (true) {}"]
+          resources:
+            requests: { cpu: 50m, memory: 32Mi }
+            limits: { cpu: 100m, memory: 64Mi }
