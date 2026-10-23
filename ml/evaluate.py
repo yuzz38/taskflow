@@ -29,7 +29,7 @@ def get_version(client, alias):
 
 def test_f1(mlflow, version, test):
     model = mlflow.sklearn.load_model(f"models:/{MODEL_NAME}/{version}")
-    return f1_score(test[LABEL], model.predict(test[TEXT]), average="macro")
+    return float(f1_score(test[LABEL], model.predict(test[TEXT]), average="macro"))
 
 
 def main():
@@ -44,7 +44,7 @@ def main():
 
     new_f1 = test_f1(mlflow, cand.version, test)
     old_f1 = test_f1(mlflow, champ.version, test) if champ else None
-    passed = old_f1 is None or new_f1 >= old_f1 - MIN_DELTA
+    passed = bool(old_f1 is None or new_f1 >= old_f1 - MIN_DELTA)
 
     print(f"Новая модель v{cand.version}: test_f1_macro = {new_f1:.4f}")
     if champ:
