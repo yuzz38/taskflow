@@ -16,7 +16,7 @@ async function api(path, opts = {}) {
 
 // Статус каждого микросервиса + имя пода (реплики), который ответил.
 // Обновляется каждые 3 секунды — видно балансировку и восстановление.
-const SERVICES = ['users', 'categories', 'tasks'];
+const SERVICES = ['users', 'categories', 'tasks', 'ml'];
 
 async function checkHealth() {
   const parts = await Promise.all(SERVICES.map(async s => {
@@ -127,6 +127,17 @@ document.getElementById('taskForm').onsubmit = async (e) => {
   await api('/tasks', { method: 'POST', body: JSON.stringify({ title, user_id, category_id }) });
   e.target.reset();
   loadTasks();
+};
+
+// Классификация заявки моделью из MLflow (ml-service)
+document.getElementById('mlForm').onsubmit = async (e) => {
+  e.preventDefault();
+  const text = document.getElementById('mlText').value;
+  const r = await api('/ml/predict', { method: 'POST', body: JSON.stringify({ text }) });
+  document.getElementById('mlModel').textContent = `модель v${r.model_version}`;
+  document.getElementById('mlResult').innerHTML = r.top
+    .map(t => `<li><span>${t.category}</span><span class="meta">${Math.round(t.probability * 100)} %</span></li>`)
+    .join('');
 };
 
 checkHealth();

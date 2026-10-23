@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: memory-stress
-          image: node:22-alpine          # уже скачан в лабе 3
+          image: node:22-alpine         
           imagePullPolicy: IfNotPresent
           command: ["node", "-e"]
           args:

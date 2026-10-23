@@ -1,0 +1,14 @@
+{
+  "fixed": {
+    "ngram_max": 2,
+    "learning_rate_init": 0.001,
+    "batch_size": 64,
+    "max_iter": 30,
+    "val_size": 0.2
+  },
+  "grid": {
+    "max_features": [5000, 20000],
+    "hidden_layer_sizes": [[128], [256, 64]],
+    "alpha": [0.0001]
+  }
+}

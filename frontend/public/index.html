@@ -8,7 +8,7 @@
 </head>
 <body>
   <header class="topbar">
-    <div class="brand">TaskFlow · Kubernetes</div>
+    <div class="brand">TaskFlow · MLOps</div>
     <div class="status" id="apiStatus">проверка сервисов…</div>
   </header>
 
@@ -41,6 +41,15 @@
         <button type="submit">Создать задачу</button>
       </form>
       <ul id="taskList" class="list"></ul>
+    </section>
+
+    <section class="panel wide">
+      <h2>Определить категорию заявки (ML) <span class="meta" id="mlModel"></span></h2>
+      <form id="mlForm" class="row">
+        <input id="mlText" placeholder="Текст заявки на английском, например: laptop screen broken need replacement" required />
+        <button type="submit">Определить</button>
+      </form>
+      <ul id="mlResult" class="list"></ul>
     </section>
   </main>
 

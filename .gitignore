@@ -3,3 +3,8 @@ backend/taskflow.db
 backend/taskflow.db-*
 *.log
 .DS_Store
+venv-ml/
+reports/
+data/raw/
+__pycache__/
+mlruns/

@@ -1,0 +1,73 @@
+# TaskFlow без Kubernetes (лабораторная работа №5): микросервисы + MLflow + ml-service.
+# Запуск:  docker compose up -d --build
+#   приложение  http://localhost:8081
+#   MLflow      http://localhost:5000
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: taskflow
+      POSTGRES_PASSWORD: taskflow123
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U taskflow"]
+      interval: 5s
+      retries: 10
+
+  users-service:
+    build: ./services/users-service
+    environment: &db
+      DB_HOST: postgres
+      POSTGRES_USER: taskflow
+      POSTGRES_PASSWORD: taskflow123
+      DB_NAME: users_db
+    depends_on: { postgres: { condition: service_healthy } }
+
+  categories-service:
+    build: ./services/categories-service
+    environment:
+      <<: *db
+      DB_NAME: categories_db
+    depends_on: { postgres: { condition: service_healthy } }
+
+  tasks-service:
+    build: ./services/tasks-service
+    environment:
+      <<: *db
+      DB_NAME: tasks_db
+      USERS_URL: http://users-service:3000
+      CATEGORIES_URL: http://categories-service:3000
+    depends_on: { postgres: { condition: service_healthy } }
+
+  # Сервер MLflow: метаданные запусков — SQLite, артефакты (модели) отдаёт сам сервер
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.17.2
+    command: >
+      mlflow server
+      --backend-store-uri sqlite:////mlflow/mlflow.db
+      --artifacts-destination /mlflow/artifacts
+      --serve-artifacts
+      --host 0.0.0.0 --port 5000
+      --gunicorn-opts "--timeout 600"
+    ports: ["5000:5000"]
+    volumes:
+      - mlflow-data:/mlflow
+
+  # Микросервис классификации задач: модель champion из MLflow Model Registry
+  ml-service:
+    build: ./services/ml-service
+    environment:
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      MODEL_NAME: ticket-classifier
+    depends_on: [mlflow]
+
+  frontend:
+    build: ./frontend
+    ports: ["8081:80"]
+    depends_on: [users-service, categories-service, tasks-service, ml-service]
+
+volumes:
+  pgdata:
+  mlflow-data:
