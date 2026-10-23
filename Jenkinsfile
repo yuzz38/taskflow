@@ -1,6 +1,6 @@
 // Декларативный конвейер непрерывного обучения (Continuous Training) модели TaskFlow.
 // Работает и на Windows (bat), и на Linux (sh).
-def run(String cmd) { if (isUnix()) { sh cmd } else { bat cmd } }
+def runCmd(String cmd) { if (isUnix()) { sh cmd } else { bat cmd } }
 def py() { isUnix() ? 'venv-ml/bin/python' : 'venv-ml\\Scripts\\python.exe' }
 
 pipeline {
@@ -52,18 +52,18 @@ pipeline {
                             if (isUnix()) { sh 'test -d venv-ml || python3 -m venv venv-ml' }
                             else          { bat 'if not exist venv-ml python -m venv venv-ml' }
                         }
-                        run "${py()} -m pip install -q -r ml/requirements.txt"
+                        runCmd "${py()} -m pip install -q -r ml/requirements.txt"
                     }
                 }
                 stage('Check MLflow') {
                     steps {
-                        run "${py()} -c \"import urllib.request as u; print(u.urlopen('${env.MLFLOW_TRACKING_URI}/health').read())\""
+                        runCmd "${py()} -c \"import urllib.request as u; print(u.urlopen('${env.MLFLOW_TRACKING_URI}/health').read())\""
                     }
                 }
-                stage('Validate data') { steps { run "${py()} ml/data_tool.py validate" } }
-                stage('Train')         { steps { run "${py()} ml/train.py" } }
-                stage('Quality gate')  { steps { run "${py()} ml/evaluate.py" } }
-                stage('Deploy model')  { steps { run "${py()} ml/reload.py" } }
+                stage('Validate data') { steps { runCmd "${py()} ml/data_tool.py validate" } }
+                stage('Train')         { steps { runCmd "${py()} ml/train.py" } }
+                stage('Quality gate')  { steps { runCmd "${py()} ml/evaluate.py" } }
+                stage('Deploy model')  { steps { runCmd "${py()} ml/reload.py" } }
             }
         }
     }
